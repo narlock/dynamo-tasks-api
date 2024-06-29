@@ -3,7 +3,7 @@
     {
       "PutRequest": {
         "Item": {
-          "PK": {"S": "1"},
+          "PK": {"S": "2b4eda75-0d32-4a70-a5f6-7ac6913de1e7"},
           "SK": {"S": "2024-07-05"},
           "title": {"S": "Complete project documentation"},
           "description": {"S": "Finalize and submit the project documentation by the end of the week."},
@@ -17,7 +17,7 @@
     {
       "PutRequest": {
         "Item": {
-          "PK": {"S": "2"},
+          "PK": {"S": "1b405c6b-7864-457c-9d4f-4ff7307aebb1"},
           "SK": {"S": "2024-07-03"},
           "title": {"S": "Grocery shopping"},
           "description": {"S": "Buy groceries for the week, including fruits, vegetables, and dairy products."},
