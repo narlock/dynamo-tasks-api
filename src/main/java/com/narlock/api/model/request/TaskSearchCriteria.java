@@ -10,11 +10,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class TaskSearchCriteria {
-    private String id;
-    private String dueDate;
-    private String title;
-    private String status;
-    private Integer priority;
-    private String tag;
-    private String userId;
+  private String id;
+  private String dueDate;
+  private String title;
+  private String status;
+  private Integer priority;
+  private String tag;
+  private String userId;
 }

@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class TaskSearchRequest {
-    private TaskSearchCriteria searchCriteria;
-    private TaskSearchCondition searchCondition;
+  private TaskSearchCriteria searchCriteria;
+  private TaskSearchCondition searchCondition;
 }
