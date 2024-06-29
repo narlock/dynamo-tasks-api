@@ -1,11 +1,12 @@
 package com.narlock.api.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.narlock.api.mapper.TasksMapper;
 import com.narlock.api.model.Task;
+import com.narlock.api.model.exception.ItemNotFoundException;
 import com.narlock.api.model.request.TaskSearchCondition;
 import com.narlock.api.model.request.TaskSearchCriteria;
 import com.narlock.api.model.request.TaskSearchRequest;
+import com.narlock.api.util.TasksUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -21,6 +22,10 @@ public class TasksService {
     @Autowired
     private TasksMapper tasksMapper;
 
+    /**
+     * Retrieves each task in the Tasks table interfaced through DynamoDB
+     * @return
+     */
     public List<Task> getTasks() {
         List<Task> tasks = new ArrayList<>();
 
@@ -42,12 +47,51 @@ public class TasksService {
         return tasks;
     }
 
+    /**
+     * Retrieves a single task by from DynamoDB by its taskId
+     * @param taskId
+     * @return
+     */
+    public Task getTaskById(String taskId) {
+        // Define the scan filter expression
+        String filterExpression = "PK = :PK";
+
+        // Define the expression attribute values
+        Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
+        expressionAttributeValues.put(":PK", AttributeValue.builder().s(taskId).build());
+
+        // Create a ScanRequest
+        ScanRequest scanRequest = ScanRequest.builder()
+                .tableName("Tasks")
+                .filterExpression(filterExpression)
+                .expressionAttributeValues(expressionAttributeValues)
+                .build();
+
+        // Execute the ScanRequest
+        ScanResponse scanResponse = dynamoDbClient.scan(scanRequest);
+
+        // Check if the item exists
+        if (scanResponse.items().isEmpty()) {
+            throw new ItemNotFoundException("Task " + taskId + " was not found");
+        }
+
+        // Convert the response item to a Task object
+        Map<String, AttributeValue> item = scanResponse.items().get(0);
+        return tasksMapper.convertMapToTask(item);
+    }
+
+    /**
+     * Given a searchRequest, this method retrieves tasks from DynamoDB that meet the
+     * search criteria and search condition specified in the searchRequest.
+     * @param searchRequest
+     * @return list of tasks matching search request
+     */
     public List<Task> searchTasks(TaskSearchRequest searchRequest) {
         TaskSearchCriteria criteria = searchRequest.getSearchCriteria();
         TaskSearchCondition condition = searchRequest.getSearchCondition();
 
         // Validate that at least one criterion is provided
-        if (criteria == null || allCriteriaAreNull(criteria)) {
+        if (criteria == null || TasksUtils.allCriteriaAreNull(criteria)) {
             throw new IllegalArgumentException("At least one search criterion must be provided.");
         }
 
@@ -83,16 +127,14 @@ public class TasksService {
         return tasks;
     }
 
-    private boolean allCriteriaAreNull(TaskSearchCriteria criteria) {
-        return criteria.getId() == null &&
-                criteria.getDueDate() == null &&
-                criteria.getTitle() == null &&
-                criteria.getStatus() == null &&
-                criteria.getPriority() == null &&
-                criteria.getTag() == null &&
-                criteria.getUserId() == null;
-    }
-
+    /**
+     * A helper method for adding a filter expression to a search call
+     * @param value
+     * @param attributeName
+     * @param condition
+     * @param filterExpression
+     * @param expressionAttributeValues
+     */
     private void addFilterExpression(String value, String attributeName, TaskSearchCondition condition,
                                      StringBuilder filterExpression, Map<String, AttributeValue> expressionAttributeValues) {
         if (value != null) {
@@ -109,6 +151,11 @@ public class TasksService {
         }
     }
 
+    /**
+     * Creates a task in the Tasks table on DynamoDB
+     * @param task
+     * @return
+     */
     public Task createTask(Task task) {
         // Generate a unique ID for the task
         String taskId;
@@ -138,7 +185,7 @@ public class TasksService {
         // Execute the PutItemRequest
         dynamoDbClient.putItem(putItemRequest);
 
-        return task;
+        return getTaskById(taskId);
     }
 
     /**
@@ -159,7 +206,6 @@ public class TasksService {
                 .tableName("Tasks")
                 .filterExpression(filterExpression)
                 .expressionAttributeValues(expressionAttributeValues)
-                .limit(1) // Optimization: Stop after finding the first match
                 .build();
 
         // Execute the ScanRequest

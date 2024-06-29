@@ -26,6 +26,13 @@ public class TasksRestController {
         return ResponseEntity.ok().body(TasksResponse.builder().tasks(tasks).build());
     }
 
+    @GetMapping("/{taskId}")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<Task> getTaskById(@PathVariable(value = "taskId") String taskId) {
+        Task createdTask = tasksService.getTaskById(taskId);
+        return ResponseEntity.ok().body(createdTask);
+    }
+
     @PostMapping("/search")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<TasksResponse> searchTasks(@RequestBody TaskSearchRequest searchRequest) {
