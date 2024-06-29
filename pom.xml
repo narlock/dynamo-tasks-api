@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.narlock</groupId>
 	<artifactId>dynamo-tasks-api</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<name>dynamo-tasks-api</name>
 	<description>Spring Boot REST API that connects to Amazon Dynamo DB for managing tasks</description>
 

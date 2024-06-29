@@ -1,0 +1,220 @@
+openapi: 3.0.1
+info:
+  title: Tasks API
+  description: API for managing tasks in a DynamoDB table.
+  version: 1.0.0
+servers:
+  - url: /tasks
+paths:
+  /tasks:
+    get:
+      summary: Retrieves all tasks
+      description: Retrieves all tasks from the DynamoDB table.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TasksResponse'
+    post:
+      summary: Creates a new task
+      description: Creates a new task in DynamoDB.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Task'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+  /tasks/{taskId}:
+    get:
+      summary: Retrieves a single task by its taskId
+      description: Retrieves a single task from DynamoDB by its taskId.
+      parameters:
+        - in: path
+          name: taskId
+          schema:
+            type: string
+          required: true
+          description: The ID of the task to retrieve.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Overwrites an existing task
+      description: |
+        Overwrites an existing task by taskId and full task body. The task body must contain the same
+        dueDate as the existing dueDate on the task. This endpoint will result in failure under the
+        condition that the task does not exist or the dueDate does not match the existing dueDate.
+      parameters:
+        - in: path
+          name: taskId
+          schema:
+            type: string
+          required: true
+          description: The ID of the task to overwrite.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Task'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Deletes a task
+      description: Deletes a task matching the taskId provided.
+      parameters:
+        - in: path
+          name: taskId
+          schema:
+            type: string
+          required: true
+          description: The ID of the task to delete.
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /tasks/search:
+    post:
+      summary: Searches for tasks
+      description: Searches for tasks in DynamoDB based on the provided search criteria.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskSearchRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TasksResponse'
+components:
+  schemas:
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The task ID.
+        dueDate:
+          type: string
+          description: The due date of the task.
+        title:
+          type: string
+          description: The title of the task.
+        description:
+          type: string
+          description: The description of the task.
+        status:
+          type: string
+          description: The status of the task.
+        priority:
+          type: integer
+          description: The priority of the task.
+        tags:
+          type: array
+          items:
+            type: string
+          description: The tags associated with the task.
+        userId:
+          type: string
+          description: The user ID associated with the task.
+    TaskSearchRequest:
+      type: object
+      properties:
+        searchCriteria:
+          $ref: '#/components/schemas/TaskSearchCriteria'
+        searchCondition:
+          $ref: '#/components/schemas/TaskSearchCondition'
+    TaskSearchCriteria:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The task ID to search for.
+        dueDate:
+          type: string
+          description: The due date to search for.
+        title:
+          type: string
+          description: The title to search for.
+        status:
+          type: string
+          description: The status to search for.
+        priority:
+          type: integer
+          description: The priority to search for.
+        tag:
+          type: string
+          description: The tag to search for.
+        userId:
+          type: string
+          description: The user ID to search for.
+    TaskSearchCondition:
+      type: string
+      enum:
+        - EQUAL
+        - BEGINS_WITH
+    TasksResponse:
+      type: object
+      properties:
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+    Error:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: The time the error occurred.
+        status:
+          type: integer
+          description: The HTTP status code.
+        error:
+          type: string
+          description: The HTTP status reason phrase.
+        message:
+          type: string
+          description: A message describing the error.
+        path:
+          type: string
+          description: The request path.
