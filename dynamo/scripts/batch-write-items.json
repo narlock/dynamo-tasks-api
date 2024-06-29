@@ -1,0 +1,32 @@
+{
+  "Tasks": [
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": {"S": "1"},
+          "SK": {"S": "2024-07-05"},
+          "title": {"S": "Complete project documentation"},
+          "description": {"S": "Finalize and submit the project documentation by the end of the week."},
+          "status": {"S": "pending"},
+          "priority": {"N": "2"},
+          "tags": {"SS": ["work", "documentation"]},
+          "userId": {"S": "user-123"}
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": {"S": "2"},
+          "SK": {"S": "2024-07-03"},
+          "title": {"S": "Grocery shopping"},
+          "description": {"S": "Buy groceries for the week, including fruits, vegetables, and dairy products."},
+          "status": {"S": "in-progress"},
+          "priority": {"N": "1"},
+          "tags": {"SS": ["personal", "shopping"]},
+          "userId": {"S": "user-456"}
+        }
+      }
+    }
+  ]
+}

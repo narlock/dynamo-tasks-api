@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: dynamo-spring-rest-api
+
+aws:
+  dynamodb:
+    endpoint: http://localhost:8000
+    region: us-east-1
+    accessKeyId: dummy
+    secretAccessKey: dummy
