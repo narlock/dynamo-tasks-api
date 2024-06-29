@@ -12,6 +12,7 @@ import org.springframework.web.context.request.WebRequest;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
+  private static final String BAD_REQUEST = "Bad Request";
   private static final String NOT_FOUND = "Not Found";
   private static final String INTERNAL_SERVER_ERROR = "Internal Server Error";
 
@@ -27,6 +28,20 @@ public class GlobalExceptionHandler {
             .path(request.getDescription(false))
             .build(),
         HttpStatus.NOT_FOUND);
+  }
+
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<Object> handleIllegalArgumentException(
+      IllegalArgumentException ex, WebRequest request) {
+    return new ResponseEntity<>(
+        ErrorResponse.builder()
+            .timestamp(LocalDateTime.now())
+            .status(HttpStatus.BAD_REQUEST.value())
+            .error(BAD_REQUEST)
+            .message(ex.getMessage())
+            .path(request.getDescription(false))
+            .build(),
+        HttpStatus.BAD_REQUEST);
   }
 
   @ExceptionHandler(Exception.class)
