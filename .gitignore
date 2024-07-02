@@ -167,3 +167,4 @@ src/main/resources/secrets.properties
 .idea/vcs.xml
 .idea/uiDesigner.xml
 .idea/workspace.xml
+dynamo-tasks-api.iml
