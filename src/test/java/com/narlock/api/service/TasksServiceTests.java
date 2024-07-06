@@ -7,9 +7,11 @@ import static org.mockito.Mockito.when;
 
 import com.narlock.api.mapper.TasksMapper;
 import com.narlock.api.model.Task;
-import java.util.*;
-
 import com.narlock.api.model.exception.ItemNotFoundException;
+import com.narlock.api.model.request.TaskSearchCondition;
+import com.narlock.api.model.request.TaskSearchCriteria;
+import com.narlock.api.model.request.TaskSearchRequest;
+import java.util.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -97,8 +99,7 @@ public class TasksServiceTests {
   @Test
   public void testGetTaskById_404() {
     // Given
-    ScanResponse scanResponse =
-            ScanResponse.builder().items(Collections.emptyList()).build();
+    ScanResponse scanResponse = ScanResponse.builder().items(Collections.emptyList()).build();
     when(dynamoDbClient.scan(any(ScanRequest.class))).thenReturn(scanResponse);
 
     // When
@@ -107,5 +108,138 @@ public class TasksServiceTests {
     // Then
     ItemNotFoundException thrown = assertThrows(ItemNotFoundException.class, executable);
     assertEquals("Task " + TASK_ID + " was not found", thrown.getMessage());
+  }
+
+  @Test
+  public void testSearchTasks_200() {
+    // Given
+    TaskSearchCriteria criteria = new TaskSearchCriteria();
+    criteria.setTitle("Grocery shopping");
+    TaskSearchRequest searchRequest = new TaskSearchRequest();
+    searchRequest.setSearchCriteria(criteria);
+    searchRequest.setSearchCondition(TaskSearchCondition.EQUAL);
+
+    ScanResponse scanResponse =
+        ScanResponse.builder().items(List.of(DYNAMO_MAP_SAMPLE_TASK2)).build();
+    when(dynamoDbClient.scan(any(ScanRequest.class))).thenReturn(scanResponse);
+    when(tasksMapper.convertMapToTask(DYNAMO_MAP_SAMPLE_TASK2)).thenReturn(SAMPLE_TASK2);
+
+    // When
+    List<Task> tasks = tasksService.searchTasks(searchRequest);
+
+    // Then
+    assertEquals(1, tasks.size());
+    Task task = tasks.get(0);
+    assertEquals("2", task.getId());
+    assertEquals("2024-07-03", task.getDueDate());
+    assertEquals("Grocery shopping", task.getTitle());
+    assertEquals(
+        "Buy groceries for the week, including fruits, vegetables, and dairy products.",
+        task.getDescription());
+    assertEquals("in-progress", task.getStatus());
+    assertEquals(1, task.getPriority());
+    assertEquals(Arrays.asList("personal", "shopping"), task.getTags());
+    assertEquals("user-456", task.getUserId());
+  }
+
+  @Test
+  public void testSearchTasks_noCriteria_400() {
+    // Given
+    TaskSearchRequest searchRequest = new TaskSearchRequest();
+    searchRequest.setSearchCriteria(new TaskSearchCriteria());
+
+    // When & Then
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> {
+              tasksService.searchTasks(searchRequest);
+            });
+
+    assertEquals("At least one search criterion must be provided.", thrown.getMessage());
+  }
+
+  @Test
+  public void testSearchTasks_emptyResult_200() {
+    // Given
+    TaskSearchCriteria criteria = new TaskSearchCriteria();
+    criteria.setTitle("Non-existent task");
+    TaskSearchRequest searchRequest = new TaskSearchRequest();
+    searchRequest.setSearchCriteria(criteria);
+    searchRequest.setSearchCondition(TaskSearchCondition.EQUAL);
+
+    ScanResponse scanResponse = ScanResponse.builder().items(Collections.emptyList()).build();
+    when(dynamoDbClient.scan(any(ScanRequest.class))).thenReturn(scanResponse);
+
+    // When
+    List<Task> tasks = tasksService.searchTasks(searchRequest);
+
+    // Then
+    assertTrue(tasks.isEmpty());
+  }
+
+  @Test
+  public void testSearchTasks_multipleCriteria_200() {
+    // Given
+    TaskSearchCriteria criteria = new TaskSearchCriteria();
+    criteria.setTitle("Complete project documentation");
+    criteria.setStatus("pending");
+    TaskSearchRequest searchRequest = new TaskSearchRequest();
+    searchRequest.setSearchCriteria(criteria);
+    searchRequest.setSearchCondition(TaskSearchCondition.EQUAL);
+
+    ScanResponse scanResponse =
+        ScanResponse.builder().items(List.of(DYNAMO_MAP_SAMPLE_TASK1)).build();
+    when(dynamoDbClient.scan(any(ScanRequest.class))).thenReturn(scanResponse);
+    when(tasksMapper.convertMapToTask(DYNAMO_MAP_SAMPLE_TASK1)).thenReturn(SAMPLE_TASK1);
+
+    // When
+    List<Task> tasks = tasksService.searchTasks(searchRequest);
+
+    // Then
+    assertEquals(1, tasks.size());
+    Task task = tasks.get(0);
+    assertEquals("1", task.getId());
+    assertEquals("2024-07-05", task.getDueDate());
+    assertEquals("Complete project documentation", task.getTitle());
+    assertEquals(
+        "Finalize and submit the project documentation by the end of the week.",
+        task.getDescription());
+    assertEquals("pending", task.getStatus());
+    assertEquals(2, task.getPriority());
+    assertEquals(Arrays.asList("work", "documentation"), task.getTags());
+    assertEquals("user-123", task.getUserId());
+  }
+
+  @Test
+  public void testSearchTasks_beginsWith_200() {
+    // Given
+    TaskSearchCriteria criteria = new TaskSearchCriteria();
+    criteria.setTitle("Gro");
+    TaskSearchRequest searchRequest = new TaskSearchRequest();
+    searchRequest.setSearchCriteria(criteria);
+    searchRequest.setSearchCondition(TaskSearchCondition.BEGINS_WITH);
+
+    ScanResponse scanResponse =
+        ScanResponse.builder().items(List.of(DYNAMO_MAP_SAMPLE_TASK2)).build();
+    when(dynamoDbClient.scan(any(ScanRequest.class))).thenReturn(scanResponse);
+    when(tasksMapper.convertMapToTask(DYNAMO_MAP_SAMPLE_TASK2)).thenReturn(SAMPLE_TASK2);
+
+    // When
+    List<Task> tasks = tasksService.searchTasks(searchRequest);
+
+    // Then
+    assertEquals(1, tasks.size());
+    Task task = tasks.get(0);
+    assertEquals("2", task.getId());
+    assertEquals("2024-07-03", task.getDueDate());
+    assertEquals("Grocery shopping", task.getTitle());
+    assertEquals(
+        "Buy groceries for the week, including fruits, vegetables, and dairy products.",
+        task.getDescription());
+    assertEquals("in-progress", task.getStatus());
+    assertEquals(1, task.getPriority());
+    assertEquals(Arrays.asList("personal", "shopping"), task.getTags());
+    assertEquals("user-456", task.getUserId());
   }
 }
